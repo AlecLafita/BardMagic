@@ -1,7 +1,8 @@
 #pip install music21
 from music21 import *
+import json
 
-
+SongBaseBaseName = "song"
 ######################
 def ObtainMinMaxOctaves(Track) :
     OctavesAppearances = {1:0, 2:0, 3:0, 4:0, 5:0, 6:0, 7:0, 8:0, 9:0, 10:0}
@@ -19,14 +20,14 @@ def ObtainMinMaxOctaves(Track) :
     print("MinMaxOctaves:", MinOctave, MaxOctave)
     return MinOctave, MaxOctave
 
-def GenerateTrackFile(Track) :
+def GenerateTrackFile(SongName, Track) :
     print(Track.id)
     notes = []
     times = []
         
     MinOctave, MaxOctave = ObtainMinMaxOctaves(Track)
     for NoteRest in Track.notesAndRests:
-        times.append(NoteRest.duration.quarterLength)
+        times.append(float(NoteRest.duration.quarterLength))
         if NoteRest.isRest:
             notes.append("-")
             #print("-", NoteRest.duration.quarterLength)
@@ -41,9 +42,10 @@ def GenerateTrackFile(Track) :
             else :
                 notes.append(NoteName)                
             #print(NoteRest.name, NoteRest.duration.quarterLength,NoteRest.duration.type, NoteRest.octave)
-    print(notes)
-    print(times)
-    #TODO generate files with info
+
+    ResultJSON = {"notes" : notes, "times": times}
+    with open(SongBaseBaseName + SongName + Track.id + ".json", "w") as JSONFile:
+        JSONFile.write(json.dumps(ResultJSON))
 
 def TransformSong(FileName):
     SongName = FileName.replace(".mid","")
@@ -51,7 +53,10 @@ def TransformSong(FileName):
 
     Instruments = instrument.partitionByInstrument(Score)
     for Instrument in Instruments:
-       GenerateTrackFile(Instrument)
+       GenerateTrackFile(SongName, Instrument)
 
 ######################
 TransformSong('zelda.mid')
+#TODO trasnform all files from a directory
+
+print("Files converted!")
