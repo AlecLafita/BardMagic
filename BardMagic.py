@@ -1,7 +1,7 @@
 #pip install pynput
 import json
 import time
-from pynput.keyboard import Key, Controller
+from pynput.keyboard import Controller
 
 ######################
 def ParseConfig():
@@ -24,13 +24,14 @@ keyboard = Controller()
 tempo = 60/120
 CurrentNoteIndex = 0
 
-time.sleep(4.6)
+time.sleep(2)
 keyboard.press('1')
 keyboard.release('1')
 time.sleep(2)
 
 while CurrentNoteIndex < len(Notes) :
+	if CurrentNoteIndex > 0 :
+		keyboard.release(BindingConfig[Notes[CurrentNoteIndex - 1]])
 	keyboard.press(BindingConfig[Notes[CurrentNoteIndex]])
-	keyboard.release(BindingConfig[Notes[CurrentNoteIndex]])
 	time.sleep(tempo*Times[CurrentNoteIndex])
 	CurrentNoteIndex += 1
