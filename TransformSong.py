@@ -3,17 +3,23 @@ from music21 import *
 import json
 import os
 
+MaximumOctaves = 3
+
 ######################
 def ParseConfig() :
     global SongBaseBaseName
     global SourceSongsLocalDirectory
     global GeneratedSongsLocalDirectory
+    global MinimumNotes
+    global MaximumOctaves
 
     with open('config.json') as JSONFile:
         JSONConfig = json.load(JSONFile)
         SongBaseBaseName = JSONConfig["songToPlayFileName"]
         SourceSongsLocalDirectory = JSONConfig["sourceSongsDirectory"]
         GeneratedSongsLocalDirectory = JSONConfig["destinySongsDirectory"]
+        MinimumNotes = JSONConfig["minimumNotesForTrack"]
+        MaximumOctaves = JSONConfig["maximumOctaves"]
 
 def TransformChordsToNotes(Pitches) :
     NotesAndRests= []
@@ -24,48 +30,68 @@ def TransformChordsToNotes(Pitches) :
             NotesAndRests.append(Pitch)
     return NotesAndRests
 
+def CalculateBiggestSubHistogramStart(Histogram, SubHistogramSize) :
+    BiggestSubHistogramStart = 0
+    BiggestSubHistogramSum = 0
+
+    for SubHistogramStart in range(0, len(Histogram)- SubHistogramSize) :
+        SubHistogramSum = sum(Histogram[SubHistogramStart:(SubHistogramStart + SubHistogramSize)])
+        if (SubHistogramSum > BiggestSubHistogramSum) :
+            BiggestSubHistogramSum = SubHistogramSum
+            BiggestSubHistogramStart = SubHistogramStart
+
+    return BiggestSubHistogramStart
+
 def ObtainMinMaxOctaves(Pitches) :
-    OctavesAppearances = {1:0, 2:0, 3:0, 4:0, 5:0, 6:0, 7:0, 8:0, 9:0, 10:0}
-    MinOctave = 11
+    OctavesAppearances = []
+    NumOctaves = 10
+    for Octave in range(0, NumOctaves  + 1) :
+        OctavesAppearances.append(0)
+    MinOctave = NumOctaves + 1
     MaxOctave = 0
+
     for Pitch in Pitches:
         if Pitch.isNote:
             MinOctave = min(MinOctave, Pitch.octave)
             MaxOctave = max(MaxOctave , Pitch.octave)
             OctavesAppearances[Pitch.octave] += 1
-    if (MaxOctave - MinOctave > 2) :
-        print("WARNING. There are needed", MaxOctave - MinOctave + 1, "octaves. Some notes will be removed lmao")
-    #TODO obtain minmax octaves from appearances
+
+    NeededOctaves = MaxOctave - MinOctave + 1
+    if NeededOctaves > MaximumOctaves :
+        MinOctave = CalculateBiggestSubHistogramStart(OctavesAppearances, MaximumOctaves)
+        MaxOctave = MinOctave + MaximumOctaves - 1
+        RemovesNotes = sum(OctavesAppearances) - sum(OctavesAppearances[MinOctave:(MaxOctave + 1)])
+        print("WARNING. There are needed", NeededOctaves, "octaves, and we only can have", MaximumOctaves, "so", RemovesNotes, "notes will be removed lmao")
+
     return MinOctave, MaxOctave
 
 def GenerateTrackFile(TrackName, Track) :
+    print("Converting " + SongBaseBaseName + TrackName  + "...")
     notes = []
     times = []
 
     TrackPitches = TransformChordsToNotes(Track.notesAndRests)        
     MinOctave, MaxOctave = ObtainMinMaxOctaves(TrackPitches)
-    for Pitch in TrackPitches :
-        times.append(float(Pitch.duration.quarterLength))
+    for Pitch in TrackPitches :       
         if Pitch.isRest:
+            times.append(float(Pitch.duration.quarterLength))
             notes.append("-")
-        elif Pitch.isNote:
+        elif Pitch.isNote and Pitch.octave >= MinOctave and Pitch.octave <= MaxOctave :
+            times.append(float(Pitch.duration.quarterLength))
             NoteName = Pitch.name.replace("-","b") #Transform flat nomenclature
-            if Pitch.octave < MinOctave or Pitch.octave > MaxOctave :
-                notes.append("-")
             if Pitch.octave == MinOctave :
-                notes.append("d" + NoteName)
+                NoteName = "d" + NoteName
             elif Pitch.octave == MaxOctave :
-                notes.append("u" + NoteName)
-            else :
-                notes.append(NoteName)                
-        else :
-            raise ValueError("Parsing undefined pitch")
+                NoteName = "u" + NoteName
+            notes.append(NoteName)
 
-    if len(notes) > 0 :
+    if len(notes) >= MinimumNotes :
         ResultJSON = {"notes" : notes, "times": times}
         with open(GeneratedSongsLocalDirectory + "/" + SongBaseBaseName + TrackName + ".json", "w") as JSONFile:
             JSONFile.write(json.dumps(ResultJSON))
         print("Converted " + SongBaseBaseName + TrackName  + "!")
+    else : 
+        print(SongBaseBaseName + TrackName  + "couldn't be converted, it just have", len(notes), "notes!")
 
 def TransformSong(FileName):
     SongName = FileName.replace(".mid","").replace(SourceSongsLocalDirectory + "/", "")
@@ -79,7 +105,6 @@ def TransformSong(FileName):
             for Element in Track.voices: 
                 GenerateTrackFile(SongName + "Track" + str(Index), Element)
                 Index += 1
-
 
 ######################
 ParseConfig()

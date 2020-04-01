@@ -5,8 +5,9 @@ from pynput.keyboard import Controller
 
 ######################
 def ParseConfig():
-    with open('config.json') as JSONFile:
-        return json.load(JSONFile)["binds"]
+	with open('config.json') as JSONFile :
+		JSON = json.load(JSONFile)
+		return JSON["binds"], JSON["BMP"]
 
 def SongConfig() : 
 	with open('config.json') as JSONFile:
@@ -18,22 +19,22 @@ def SongConfig() :
 current_time = lambda: int(round(time.time()))
 
 ######################
-BindingConfig = ParseConfig()
+BindingConfig, BMP = ParseConfig()
 Notes, Times = SongConfig()
 
-keyboard = Controller()
+Keyboard = Controller()
 
-tempo = 60/120
+Tempo = 60/BMP
 CurrentNoteIndex = 0
 
 time.sleep(2)
-keyboard.press('1')
-keyboard.release('1')
-time.sleep(2)
+Keyboard.press('1')
+Keyboard.release('1')
+time.sleep(1)
 
 while CurrentNoteIndex < len(Notes) :
 	if CurrentNoteIndex > 0 :
-		keyboard.release(BindingConfig[Notes[CurrentNoteIndex - 1]])
-	keyboard.press(BindingConfig[Notes[CurrentNoteIndex]])
-	time.sleep(tempo*Times[CurrentNoteIndex])
+		Keyboard.release(BindingConfig[Notes[CurrentNoteIndex - 1]])
+	Keyboard.press(BindingConfig[Notes[CurrentNoteIndex]])
+	time.sleep(Tempo * Times[CurrentNoteIndex])
 	CurrentNoteIndex += 1
