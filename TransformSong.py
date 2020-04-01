@@ -11,7 +11,7 @@ def ParseConfig() :
 
     with open('config.json') as JSONFile:
         JSONConfig = json.load(JSONFile)
-        SongBaseBaseName = JSONConfig["sourceSongsDirectory"]
+        SongBaseBaseName = JSONConfig["songToPlayFileName"]
         SourceSongsLocalDirectory = JSONConfig["sourceSongsDirectory"]
         GeneratedSongsLocalDirectory = JSONConfig["destinySongsDirectory"]
 
@@ -70,8 +70,16 @@ def GenerateTrackFile(TrackName, Track) :
 def TransformSong(FileName):
     SongName = FileName.replace(".mid","").replace(SourceSongsLocalDirectory + "/", "")
     Score = converter.parse(FileName)
-    for Index, Track in enumerate(Score.parts) :
-       GenerateTrackFile(SongName + "Track" + str(Index), Track)
+    Index = 0
+    for Track in Score.parts :
+        if len(Track.notesAndRests) > 1 :
+            GenerateTrackFile(SongName + "Track" + str(Index), Track)
+            Index += 1
+        else : 
+            for Element in Track.voices: 
+                GenerateTrackFile(SongName + "Track" + str(Index), Element)
+                Index += 1
+
 
 ######################
 ParseConfig()
