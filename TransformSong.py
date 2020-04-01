@@ -1,17 +1,17 @@
 #pip install music21
 from music21 import *
 import json
+import os
 
 SongBaseBaseName = "song"
 SourceSongsLocalDirectory = "songs"
 GeneratedSongsLocalDirectory = "generatedSongs"
-######################
 
+######################
 def TransformChordsToNotes(Pitches) :
     NotesAndRests= []
     for Pitch in Pitches :
         if Pitch.isChord :
-            print("CHORD", Pitch.notes)
             NotesAndRests.append(Pitch.notes[0]) #TODO maybe take the lower one?
         else :
             NotesAndRests.append(Pitch)
@@ -26,11 +26,9 @@ def ObtainMinMaxOctaves(Pitches) :
             MinOctave = min(MinOctave, Pitch.octave)
             MaxOctave = max(MaxOctave , Pitch.octave)
             OctavesAppearances[Pitch.octave] += 1
-    print(OctavesAppearances)
     if (MaxOctave - MinOctave > 2) :
-        print("WARNING. There are needed", MaxOctave - MinOctave + 1, "octaves, for the", Track.id, "track. Some notes will be removed lmao")
+        print("WARNING. There are needed", MaxOctave - MinOctave + 1, "octaves. Some notes will be removed lmao")
     #TODO obtain minmax octaves from appearances
-    print("MinMaxOctaves:", MinOctave, MaxOctave)
     return MinOctave, MaxOctave
 
 def GenerateTrackFile(TrackName, Track) :
@@ -57,9 +55,12 @@ def GenerateTrackFile(TrackName, Track) :
             #print(Pitch.name, Pitch.duration.quarterLength,Pitch.duration.type, Pitch.octave)
         else :
             raise ValueError("Parsing undefined pitch")
-    ResultJSON = {"notes" : notes, "times": times}
-    with open(GeneratedSongsLocalDirectory + "/" +SongBaseBaseName + TrackName + ".json", "w") as JSONFile:
-        JSONFile.write(json.dumps(ResultJSON))
+
+    if len(notes) > 0 :
+        ResultJSON = {"notes" : notes, "times": times}
+        with open(GeneratedSongsLocalDirectory + "/" + SongBaseBaseName + TrackName + ".json", "w") as JSONFile:
+            JSONFile.write(json.dumps(ResultJSON))
+        print("Converted " + SongBaseBaseName + TrackName  + "!")
 
 def TransformSong(FileName):
     SongName = FileName.replace(".mid","").replace(SourceSongsLocalDirectory + "/", "")
@@ -68,7 +69,8 @@ def TransformSong(FileName):
        GenerateTrackFile(SongName + "Track" + str(Index), Track)
 
 ######################
-TransformSong(SourceSongsLocalDirectory + '/' + 'dragonrostisland.mid')
-#TODO trasnform all files from a directory
-
+print(os.listdir())
+for Song in os.listdir(SourceSongsLocalDirectory):
+    if Song.find(".mid") != -1:
+        TransformSong(SourceSongsLocalDirectory + '/' + Song)
 print("Files converted!")
