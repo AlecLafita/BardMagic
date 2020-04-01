@@ -9,19 +9,18 @@ def ObtainMinMaxOctaves(Track) :
     MinOctave = 11
     MaxOctave = 0
     for NoteRest in Track.notes:
-        if not NoteRest.isRest:
+        if NoteRest.isNote:
             MinOctave = min(MinOctave, NoteRest.octave)
             MaxOctave = max(MaxOctave , NoteRest.octave)
             OctavesAppearances[NoteRest.octave] += 1
     print(OctavesAppearances)
     if (MaxOctave - MinOctave > 2) :
-        print("WARNING. There are needed", MaxOctave - MinOctave + 1, "octaves, for the", Instrument.id, "track. Some notes will be removed lmao")
+        print("WARNING. There are needed", MaxOctave - MinOctave + 1, "octaves, for the", Track.id, "track. Some notes will be removed lmao")
     #TODO obtain minmax octaves from appearances
     print("MinMaxOctaves:", MinOctave, MaxOctave)
     return MinOctave, MaxOctave
 
-def GenerateTrackFile(SongName, Track) :
-    print(Track.id)
+def GenerateTrackFile(TrackName, Track) :
     notes = []
     times = []
         
@@ -31,7 +30,7 @@ def GenerateTrackFile(SongName, Track) :
         if NoteRest.isRest:
             notes.append("-")
             #print("-", NoteRest.duration.quarterLength)
-        else :
+        elif NoteRest.isNote:
             NoteName = NoteRest.name.replace("-","b") #Transform flat nomenclature
             if NoteRest.octave < MinOctave or NoteRest.octave > MaxOctave :
                 notes.append("-")
@@ -44,19 +43,17 @@ def GenerateTrackFile(SongName, Track) :
             #print(NoteRest.name, NoteRest.duration.quarterLength,NoteRest.duration.type, NoteRest.octave)
 
     ResultJSON = {"notes" : notes, "times": times}
-    with open(SongBaseBaseName + SongName + Track.id + ".json", "w") as JSONFile:
+    with open(SongBaseBaseName + TrackName + ".json", "w") as JSONFile:
         JSONFile.write(json.dumps(ResultJSON))
 
 def TransformSong(FileName):
     SongName = FileName.replace(".mid","")
     Score = converter.parse(FileName)
-
-    Instruments = instrument.partitionByInstrument(Score)
-    for Instrument in Instruments:
-       GenerateTrackFile(SongName, Instrument)
+    for Index, Track in enumerate(Score.parts) :
+       GenerateTrackFile(SongName + "Track" + str(Index), Track)
 
 ######################
-TransformSong('zelda.mid')
+TransformSong('ventus.mid')
 #TODO trasnform all files from a directory
 
 print("Files converted!")
