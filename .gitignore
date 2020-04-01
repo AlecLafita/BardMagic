@@ -1,0 +1,4 @@
+*.pyproj
+song.json
+songs/
+generatedsongs/
