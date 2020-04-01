@@ -3,11 +3,18 @@ from music21 import *
 import json
 import os
 
-SongBaseBaseName = "song"
-SourceSongsLocalDirectory = "songs"
-GeneratedSongsLocalDirectory = "generatedSongs"
-
 ######################
+def ParseConfig() :
+    global SongBaseBaseName
+    global SourceSongsLocalDirectory
+    global GeneratedSongsLocalDirectory
+
+    with open('config.json') as JSONFile:
+        JSONConfig = json.load(JSONFile)
+        SongBaseBaseName = JSONConfig["sourceSongsDirectory"]
+        SourceSongsLocalDirectory = JSONConfig["sourceSongsDirectory"]
+        GeneratedSongsLocalDirectory = JSONConfig["destinySongsDirectory"]
+
 def TransformChordsToNotes(Pitches) :
     NotesAndRests= []
     for Pitch in Pitches :
@@ -41,7 +48,6 @@ def GenerateTrackFile(TrackName, Track) :
         times.append(float(Pitch.duration.quarterLength))
         if Pitch.isRest:
             notes.append("-")
-            #print("-", Pitch.duration.quarterLength)
         elif Pitch.isNote:
             NoteName = Pitch.name.replace("-","b") #Transform flat nomenclature
             if Pitch.octave < MinOctave or Pitch.octave > MaxOctave :
@@ -52,7 +58,6 @@ def GenerateTrackFile(TrackName, Track) :
                 notes.append("u" + NoteName)
             else :
                 notes.append(NoteName)                
-            #print(Pitch.name, Pitch.duration.quarterLength,Pitch.duration.type, Pitch.octave)
         else :
             raise ValueError("Parsing undefined pitch")
 
@@ -69,7 +74,10 @@ def TransformSong(FileName):
        GenerateTrackFile(SongName + "Track" + str(Index), Track)
 
 ######################
-print(os.listdir())
+ParseConfig()
+if not os.path.exists(GeneratedSongsLocalDirectory):
+    os.mkdir(GeneratedSongsLocalDirectory)
+
 for Song in os.listdir(SourceSongsLocalDirectory):
     if Song.find(".mid") != -1:
         TransformSong(SourceSongsLocalDirectory + '/' + Song)

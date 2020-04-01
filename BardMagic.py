@@ -6,12 +6,14 @@ from pynput.keyboard import Controller
 ######################
 def ParseConfig():
     with open('config.json') as JSONFile:
-        return json.load(JSONFile)
+        return json.load(JSONFile)["binds"]
 
 def SongConfig() : 
-    with open('song.json') as JSONFile:
-        JSON = json.load(JSONFile)
-        return JSON["notes"], JSON["times"]
+	with open('config.json') as JSONFile:
+		SongFileName =  json.load(JSONFile)["songToPlayFileName"]
+		with open(SongFileName + '.json') as JSONFile:
+			JSON = json.load(JSONFile)
+			return JSON["notes"], JSON["times"]
 
 current_time = lambda: int(round(time.time()))
 
