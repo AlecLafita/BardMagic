@@ -44,7 +44,7 @@
 	"sourceSongsDirectory": "songs",
 	"destinySongsDirectory": "generatedSongs",
 	"songToPlayFileName": "song",
-	"BMP" :  120,
+	"BPM" :  120,
 	"minimumNotesForTrack" :  15,
 	"maximumOctaves" :  3
 }
